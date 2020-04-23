@@ -39,7 +39,6 @@ class xArm7_kinematics():
         l3 = self.l3
         l4 = self.l4
         l5 = self.l5
-        l6 = self.l6
         
         c3  = math.cos(q3)
         c4  = math.cos(q4)
