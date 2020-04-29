@@ -106,6 +106,12 @@ class xArm7_controller():
 
             # Compute each transformation matrix wrt the base frame from joints' angular positions
             self.A01 = self.kinematics.tf_A01(self.joint_angpos)
+            self.A02 = self.kinematics.tf_A02(self.joint_angpos)
+            self.A03 = self.kinematics.tf_A03(self.joint_angpos)
+            self.A04 = self.kinematics.tf_A04(self.joint_angpos)
+            self.A05 = self.kinematics.tf_A05(self.joint_angpos)
+            self.A06 = self.kinematics.tf_A06(self.joint_angpos)
+            self.A07 = self.kinematics.tf_A07(self.joint_angpos)
 
             # Compute jacobian matrix
             J = self.kinematics.compute_jacobian(self.joint_angpos)
