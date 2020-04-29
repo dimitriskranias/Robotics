@@ -102,6 +102,45 @@ class xArm7_controller():
         rostime_now = rospy.get_rostime()
         time_now = rostime_now.nsecs
 
+        #Path Planning 
+        self.A07 = self.kinematics.tf_A07(self.joint_angpos)
+        A07 = self.A07
+        
+        #Duration of Movement from Start to Final Position 
+        T =1
+        Tmax = 100*T+1
+
+        #Samples
+        t = [(x/100) for x in range(Tmax)]
+
+        Pe = A07[0:3,3]
+
+        #Start_Position 
+        xde_0 =Pe.item(0)
+        yde_0 =Pe.item(1)
+        zde_0 =Pe.item(2)
+
+        #Final Position 
+        d_AB = 0.4
+
+        xde_f =Pe[0]
+        yde_f =Pe[1] + d_AB
+        zde_f =Pe[2]
+
+
+        a0 = yde_0 
+        a2 =  3/(T**2) * (yde_0-yde_f) 
+        a3 = -2/(T**3) * (yde_0-yde_f) 
+
+        xd = np.ones(Tmax)*xde_0
+        xd_= np.zeros(Tmax)
+
+        yd  = a0 + a2*np.power(t, 2)   + a3*np.power(t, 3)
+        yd_ = 2*(a2*t) + 3*a3*np.power(t, 2)
+
+        zd = np.ones(Tmax)*zde_0
+        zd_= np.zeros(Tmax)
+        
         while not rospy.is_shutdown():
 
             # Compute each transformation matrix wrt the base frame from joints' angular positions
