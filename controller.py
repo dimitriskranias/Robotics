@@ -107,7 +107,7 @@ class xArm7_controller():
         A07 = self.A07
         
         #Duration of Movement from Start to Final Position 
-        T =1
+        T = 1
         Tmax = 100*T+1
 
         #Samples
@@ -135,52 +135,83 @@ class xArm7_controller():
         xd = np.ones(Tmax)*xde_0
         xd_= np.zeros(Tmax)
 
-        yd  = a0 + a2*np.power(t, 2)   + a3*np.power(t, 3)
+        yd  = a0 + a2*np.power(t, 2) + a3*np.power(t, 3)
         yd_ = 2*(a2*t) + 3*a3*np.power(t, 2)
 
         zd = np.ones(Tmax)*zde_0
         zd_= np.zeros(Tmax)
         
+        tk = 0
         while not rospy.is_shutdown():
+            while (tk < Tmax):
+                # Compute each transformation matrix wrt the base frame from joints' angular positions
+                self.A01 = self.kinematics.tf_A01(self.joint_angpos)
+                self.A02 = self.kinematics.tf_A02(self.joint_angpos)
+                self.A03 = self.kinematics.tf_A03(self.joint_angpos)
+                self.A04 = self.kinematics.tf_A04(self.joint_angpos)
+                self.A05 = self.kinematics.tf_A05(self.joint_angpos)
+                self.A06 = self.kinematics.tf_A06(self.joint_angpos)
+                self.A07 = self.kinematics.tf_A07(self.joint_angpos)
+                print(self.A07)
 
-            # Compute each transformation matrix wrt the base frame from joints' angular positions
-            self.A01 = self.kinematics.tf_A01(self.joint_angpos)
-            self.A02 = self.kinematics.tf_A02(self.joint_angpos)
-            self.A03 = self.kinematics.tf_A03(self.joint_angpos)
-            self.A04 = self.kinematics.tf_A04(self.joint_angpos)
-            self.A05 = self.kinematics.tf_A05(self.joint_angpos)
-            self.A06 = self.kinematics.tf_A06(self.joint_angpos)
-            self.A07 = self.kinematics.tf_A07(self.joint_angpos)
+                # Compute jacobian matrix
+                J = self.kinematics.compute_jacobian(self.joint_angpos)
+                # pseudoinverse jacobian
+                pinvJ = pinv(J)
 
-            # Compute jacobian matrix
-            J = self.kinematics.compute_jacobian(self.joint_angpos)
-            # pseudoinverse jacobian
-            pinvJ = pinv(J)
+                """
+                INSERT YOUR MAIN CODE HERE
+                self.joint_angvel[0] = ...
+                """
+                p1d_ = np.matrix([[xd_[tk]],\
+                                  [yd_.item(tk)],\
+                                  [zd_[tk]]])
+                print("Des Velocity")
+                print(p1d_)
+                p1d = np.matrix([[xd[tk]],\
+                                 [yd.item(tk)],\
+                                 [zd[tk]]])
+                print("Des Position")
+                print(p1d)
+                f1q = np.matrix([[self.A07[0,3]],\
+                                 [self.A07[1,3]],\
+                                 [self.A07[2,3]]])
+                print("Position")
+                print(f1q)
 
-            """
-            INSERT YOUR MAIN CODE HERE
-            self.joint_angvel[0] = ...
-            """
+                #Task 1
+                K1 = 40
+                parenthesis1 = p1d_ + K1 * (p1d - f1q) 
+                task1 = np.dot(pinvJ, parenthesis1)
+                for i in range(7):
+                    self.joint_angvel[i] = task1[i, 0]
 
-            # Convertion to angular position after integrating the angular speed in time
-            # Calculate time interval
-            time_prev = time_now
-            rostime_now = rospy.get_rostime()
-            time_now = rostime_now.nsecs
-            dt = (time_now - time_prev)/1e9
-            # Integration
-            self.joint_angpos = self.joint_angpos + [index * dt for index in self.joint_angvel]
+                # Convertion to angular position after integrating the angular speed in time
+                # Calculate time interval
+                time_prev = time_now
+                rostime_now = rospy.get_rostime()
+                time_now = rostime_now.to_nsec()
+                print(time_now)
+                dt = (time_now - time_prev)/1e9
 
-            # Publish the new joint's angular positions
-            self.joint1_pos_pub.publish(self.joint_angpos[0])
-            self.joint2_pos_pub.publish(self.joint_angpos[1])
-            self.joint3_pos_pub.publish(self.joint_angpos[2])
-            self.joint4_pos_pub.publish(self.joint_angpos[3])
-            self.joint5_pos_pub.publish(self.joint_angpos[4])
-            self.joint6_pos_pub.publish(self.joint_angpos[5])
-            self.joint7_pos_pub.publish(self.joint_angpos[6])
+                # Integration
+                self.joint_angpos = np.add(self.joint_angpos, [index * dt for index in self.joint_angvel])
+                print(self.joint_angpos)
 
-            self.pub_rate.sleep()
+                # Publish the new joint's angular positions
+                self.joint1_pos_pub.publish(self.joint_angpos[0])
+                self.joint2_pos_pub.publish(self.joint_angpos[1])
+                self.joint3_pos_pub.publish(self.joint_angpos[2])
+                self.joint4_pos_pub.publish(self.joint_angpos[3])
+                self.joint5_pos_pub.publish(self.joint_angpos[4])
+                self.joint6_pos_pub.publish(self.joint_angpos[5])
+                self.joint7_pos_pub.publish(self.joint_angpos[6])
+
+                self.pub_rate.sleep()
+
+                tk += 1
+
+            tk = 0
 
     def turn_off(self):
         pass
