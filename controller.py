@@ -120,17 +120,21 @@ class xArm7_controller():
         yde_0 =Pe.item(1)
         zde_0 =Pe.item(2)
 
-        #Final Position 
+        #Distance
         d_AB = 0.4
 
+        #Final Position 
         xde_f =Pe[0]
         yde_f =Pe[1] + d_AB
         zde_f =Pe[2]
 
-
+        #Coefficients of Polynomial 
         a0 = yde_0 
         a2 =  3/(T**2) * (yde_0-yde_f) 
         a3 = -2/(T**3) * (yde_0-yde_f) 
+
+        #(xd,yd,zd)   :position 
+        #(xd_,yd_,zd_):velocity 
 
         xd = np.ones(Tmax)*xde_0
         xd_= np.zeros(Tmax)
@@ -157,6 +161,22 @@ class xArm7_controller():
             # pseudoinverse jacobian
             pinvJ = pinv(J)
 
+
+            p1d_=np.matrix([[xd_[0]],\
+                           [yd_.item(0)],\
+                           [zd_[0]]])
+
+            task1  = np.dot(pinvJ,p1d_)
+
+            self.joint_angvel[0]= task1[0][0]
+            self.joint_angvel[1]= task1[1][0]
+            self.joint_angvel[2]= task1[2][0]
+            self.joint_angvel[3]= task1[3][0]
+            self.joint_angvel[4]= task1[4][0]
+            self.joint_angvel[5]= task1[5][0]
+            self.joint_angvel[6]= task1[6][0]
+
+        
             """
             INSERT YOUR MAIN CODE HERE
             self.joint_angvel[0] = ...
