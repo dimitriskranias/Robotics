@@ -145,14 +145,13 @@ class xArm7_controller():
         zd = np.ones(Tmax)*zde_0
         zd_= np.zeros(Tmax)
 
-
+        
         from_A_to_B = True 
         
         
         tk = 0
         while not rospy.is_shutdown():
             while (tk < Tmax) and (tk >= 0):
-                print(tk)
                 # Compute each transformation matrix wrt the base frame from joints' angular positions
                 self.A01 = self.kinematics.tf_A01(self.joint_angpos)
                 self.A02 = self.kinematics.tf_A02(self.joint_angpos)
@@ -171,6 +170,7 @@ class xArm7_controller():
                 """
                 INSERT YOUR MAIN CODE HERE
                 self.joint_angvel[0] = ...
+                
                 """
                 p1d_ = np.matrix([[xd_[tk]],\
                                   [yd_.item(tk)],\
@@ -192,15 +192,31 @@ class xArm7_controller():
                 K1 = 40
                 parenthesis1 = p1d_ + K1 * (p1d - f1q) 
                 task1 = np.dot(pinvJ, parenthesis1)
+                print(task1)
                 for i in range(7):
                     self.joint_angvel[i] = task1[i, 0]
+                #print("AngPos")
+                #print(self.joint_angpos)
+                #print("Callback")
+                #print(self.joint_states.position)
 
+                #Task 2
+                Kc = 10
+                yobst = (self.model_states.pose[1].position.y + self.model_states.pose[2].position.y) / 2
+
+                jdist7 = (1/2) * Kc * ((self.A07[1,3] - yobst) ** 2)
+                #print(jdist7)
+                yd7_ = np.zeros((7,1))
+                for i in range(7):
+                    yd7_[i] = -Kc * (self.A07[1,3] - yobst) * J[1,i]
+                #print(yd7_)
+                task2 = np.dot((np.eye(7) - np.dot(pinvJ, J)), yd7_)
+                print(task2)
                 # Convertion to angular position after integrating the angular speed in time
                 # Calculate time interval
                 time_prev = time_now
                 rostime_now = rospy.get_rostime()
                 time_now = rostime_now.to_nsec()
-                #print(time_now)
                 dt = (time_now - time_prev)/1e9
 
                 # Integration
@@ -227,7 +243,7 @@ class xArm7_controller():
                 tk -= 2
             else:
                 tk += 2
-            from_A_to_B = not from_A_to_B
+            from_A_to_B = not from_A_to_B 
 
     def turn_off(self):
         pass
