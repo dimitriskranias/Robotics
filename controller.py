@@ -192,7 +192,7 @@ class xArm7_controller():
                 K1 = 40
                 parenthesis1 = p1d_ + K1 * (p1d - f1q) 
                 task1 = np.dot(pinvJ, parenthesis1)
-                print(task1)
+                #print(task1)
                 for i in range(7):
                     self.joint_angvel[i] = task1[i, 0]
                 #print("AngPos")
@@ -202,16 +202,45 @@ class xArm7_controller():
 
                 #Task 2
                 Kc = 10
+                K24 = 1
+                K25 = 1
+                K26 = 1
+                K27 = 1
+
+                #Middle of obstacles
                 yobst = (self.model_states.pose[1].position.y + self.model_states.pose[2].position.y) / 2
 
+                #Distances of Joints from the middle of the obstacles
+                jdist4 = (1/2) * Kc * ((self.A04[1,3] - yobst) ** 2)
+                jdist5 = (1/2) * Kc * ((self.A05[1,3] - yobst) ** 2)
+                jdist6 = (1/2) * Kc * ((self.A06[1,3] - yobst) ** 2)
                 jdist7 = (1/2) * Kc * ((self.A07[1,3] - yobst) ** 2)
                 #print(jdist7)
-                yd7_ = np.zeros((7,1))
+
+                size = (7,1)
+                yd4_, yd5_, yd6_, yd7_ = np.zeros(size), np.zeros(size), np.zeros(size), np.zeros(size)
                 for i in range(7):
+                    yd4_[i] = -Kc * (self.A04[1,3] - yobst) * (J[1,i] - J[1,4])
+                    yd5_[i] = -Kc * (self.A05[1,3] - yobst) * (J[1,i] - J[1,5])
+                    yd6_[i] = -Kc * (self.A06[1,3] - yobst) * (J[1,i] - J[1,6])
                     yd7_[i] = -Kc * (self.A07[1,3] - yobst) * J[1,i]
+                #print(yd4_)
+                #print(yd5_)
+                #print(yd6_)
                 #print(yd7_)
-                task2 = np.dot((np.eye(7) - np.dot(pinvJ, J)), yd7_)
+                parenthesis21 = np.eye(7) - np.dot(pinvJ, J)
+                parenthesis22 = K24 * yd4_ + K25 * yd5_ + K26 * yd6_ + K27 * yd7_
+                task2 = np.dot(parenthesis21, parenthesis22)
+                #print(np.eye(7) - np.dot(pinvJ, J))
                 print(task2)
+
+                maximum = max(jdist4, jdist5, jdist6, jdist7)
+                if (maximum >= 0.01):
+                    for i in range(7):
+                        self.joint_angvel[i] = task1[i, 0] + task2[i, 0]
+                else:
+                    for i in range(7):
+                        self.joint_angvel[i] = task1[i, 0]
                 # Convertion to angular position after integrating the angular speed in time
                 # Calculate time interval
                 time_prev = time_now
