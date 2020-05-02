@@ -83,33 +83,42 @@ class xArm7_controller():
 
     def publish(self):
 
+
+        A=0.1935087641537656
+        B=0.8437180160844724
+        C=0.15734128218780974
+        D=1.630450591441229
+        E=0.0025424271244816055
+        F=0.6933653307901801
+        G=9.526694282335768e-06
+
         # set configuration
-        self.joint_angpos = [-0.2, 0.97, 0.7, 1.605, -0.9, 0.75, 0]
+        self.joint_angpos = [A,B,C,D,E,F,G]
         tmp_rate = rospy.Rate(1)
         tmp_rate.sleep()
+        self.joint5_pos_pub.publish(self.joint_angpos[4])
         self.joint4_pos_pub.publish(self.joint_angpos[3])
-        self.joint1_pos_pub.publish(self.joint_angpos[0])
+        self.joint6_pos_pub.publish(self.joint_angpos[5])
+        self.joint7_pos_pub.publish(self.joint_angpos[6])
         tmp_rate.sleep()
         self.joint2_pos_pub.publish(self.joint_angpos[1])
-        self.joint3_pos_pub.publish(self.joint_angpos[2])
-        self.joint6_pos_pub.publish(self.joint_angpos[5])
-        self.joint5_pos_pub.publish(self.joint_angpos[4])
-        tmp_rate.sleep()
-        self.joint_angpos[0] = -0.25
         self.joint1_pos_pub.publish(self.joint_angpos[0])
+        tmp_rate.sleep()
+        self.joint3_pos_pub.publish(self.joint_angpos[2])
         tmp_rate.sleep()
         print("The system is ready to execute your algorithm...")
 
         rostime_now = rospy.get_rostime()
-        time_now = rostime_now.nsecs
+        time_now = rostime_now.to_nsec()
 
         #Path Planning 
         self.A07 = self.kinematics.tf_A07(self.joint_angpos)
         A07 = self.A07
         
+        
         #Duration of Movement from Start to Final Position 
         T = 1
-        Tmax = 100*T+1
+        Tmax = int(100*T+1)
 
         #Samples
         t = [(x/100) for x in range(Tmax)]
@@ -147,9 +156,7 @@ class xArm7_controller():
         zd_= np.zeros(Tmax)
 
         
-        from_A_to_B = True 
-        
-        
+        from_A_to_B = True
         tk = 0
         while not rospy.is_shutdown():
             while (tk < Tmax) and (tk >= 0):
@@ -168,11 +175,7 @@ class xArm7_controller():
                 # pseudoinverse jacobian
                 pinvJ = pinv(J)
 
-                """
-                INSERT YOUR MAIN CODE HERE
-                self.joint_angvel[0] = ...
                 
-                """
                 p1d_ = np.matrix([[xd_[tk]],\
                                   [yd_.item(tk)],\
                                   [zd_[tk]]])
@@ -314,12 +317,14 @@ class xArm7_controller():
                     tk += 1
                 else:
                     tk -= 1
-            
+
+                    
             if(from_A_to_B):
                 tk -= 2
             else:
                 tk += 2
-            from_A_to_B = not from_A_to_B 
+            from_A_to_B = not from_A_to_B
+
 
     def turn_off(self):
         pass
