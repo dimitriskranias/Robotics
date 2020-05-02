@@ -14,6 +14,7 @@ from math import sin, cos, atan2, pi, sqrt
 from numpy.linalg import inv, det, norm, pinv
 import numpy as np
 import time as t
+import math 
 
 # Arm parameters
 # xArm7 kinematics class
@@ -193,8 +194,8 @@ class xArm7_controller():
                 parenthesis1 = p1d_ + K1 * (p1d - f1q) 
                 task1 = np.dot(pinvJ, parenthesis1)
                 #print(task1)
-                for i in range(7):
-                    self.joint_angvel[i] = task1[i, 0]
+                #for i in range(7):
+                #    self.joint_angvel[i] = task1[i, 0]
                 #print("AngPos")
                 #print(self.joint_angpos)
                 #print("Callback")
@@ -202,45 +203,95 @@ class xArm7_controller():
 
                 #Task 2
                 Kc = 10
-                K24 = 1
-                K25 = 1
-                K26 = 1
-                K27 = 1
+                K24 = 20
+                K25 = 10
 
                 #Middle of obstacles
-                yobst = (self.model_states.pose[1].position.y + self.model_states.pose[2].position.y) / 2
+                #yobst = (self.model_states.pose[1].position.y + self.model_states.pose[2].position.y) / 2
+                yobst = 0 
 
                 #Distances of Joints from the middle of the obstacles
                 jdist4 = (1/2) * Kc * ((self.A04[1,3] - yobst) ** 2)
                 jdist5 = (1/2) * Kc * ((self.A05[1,3] - yobst) ** 2)
-                jdist6 = (1/2) * Kc * ((self.A06[1,3] - yobst) ** 2)
-                jdist7 = (1/2) * Kc * ((self.A07[1,3] - yobst) ** 2)
+
                 #print(jdist7)
 
+                l2 = 0.293
+                l3 = 0.0525
+
+                q1 = self.joint_angpos[0]
+                q2 = self.joint_angpos[1]
+                q3 = self.joint_angpos[2]
+                q4 = self.joint_angpos[3]
+                q5 = self.joint_angpos[4]
+                q6 = self.joint_angpos[5]
+                q7 = self.joint_angpos[6]
+
+                c1 = math.cos(q1)
+                c2 = math.cos(q2)
+                c3 = math.cos(q3)
+                c4 = math.cos(q4)
+
+                s1 = math.sin(q1)
+                s2 = math.sin(q2)
+                s3 = math.sin(q3)
+                s4 = math.sin(q4)
+
+                theta1 = 0.2225
+                l4 = 0.3512
+
+
+                x = l4 *math.sin(theta1)
+                y = l4 *math.cos(theta1)
+
+                print("4th joint")
+
+                print(self.A04[1,3])
+
+                print("5th joint")
+                print(self.A05[1,3])
+
+             
                 size = (7,1)
-                yd4_, yd5_, yd6_, yd7_ = np.zeros(size), np.zeros(size), np.zeros(size), np.zeros(size)
-                for i in range(7):
-                    yd4_[i] = -Kc * (self.A04[1,3] - yobst) * (J[1,i] - J[1,4])
-                    yd5_[i] = -Kc * (self.A05[1,3] - yobst) * (J[1,i] - J[1,5])
-                    yd6_[i] = -Kc * (self.A06[1,3] - yobst) * (J[1,i] - J[1,6])
-                    yd7_[i] = -Kc * (self.A07[1,3] - yobst) * J[1,i]
-                #print(yd4_)
-                #print(yd5_)
-                #print(yd6_)
-                #print(yd7_)
+                yd4_ = np.zeros(size)
+                yd4_[0] = -Kc * (self.A04[1,3] - yobst) * (l2*c1*s2 - l3*(s1*s3 - c1*c2*c3))
+                yd4_[1] = -Kc * (self.A04[1,3] - yobst) * (l2*c2*s1 - l3*c3*s1*s2)
+                yd4_[2] = -Kc * (self.A04[1,3] - yobst) * (l3*(c1*c3 - c2*s1*s3))
+                yd4_[3] = 0
+                yd4_[4] = 0
+                yd4_[5] = 0
+                yd4_[6] = 0
+
+                size = (7,1)
+                yd5_ = np.zeros(size)
+                yd5_[0] = -Kc * (self.A05[1,3] - yobst) * (l2*c1*s2 - x*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4) - y*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2) - l3*(s1*s3 - c1*c2*c3))
+                yd5_[1] = -Kc * (self.A05[1,3] - yobst) * (-s1*(y*c2*c4 - l2*c2 + l3*c3*s2 - x*c2*s4 + x*c3*c4*s2 + y*c3*s2*s4))
+                yd5_[2] = -Kc * (self.A05[1,3] - yobst) * ((c1*c3 - c2*s1*s3)*(l3 + x*c4 + y*s4))
+                yd5_[3] = -Kc * (self.A05[1,3] - yobst) * (y*(c4*(c1*s3 + c2*c3*s1) + s1*s2*s4) - x*(s4*(c1*s3 + c2*c3*s1) - c4*s1*s2))
+                yd5_[4] = 0
+                yd5_[5] = 0
+                yd5_[6] = 0
+
+
+
+
                 parenthesis21 = np.eye(7) - np.dot(pinvJ, J)
-                parenthesis22 = K24 * yd4_ + K25 * yd5_ + K26 * yd6_ + K27 * yd7_
+                parenthesis22 = K24 * yd4_ + K25*yd5_
+                
                 task2 = np.dot(parenthesis21, parenthesis22)
                 #print(np.eye(7) - np.dot(pinvJ, J))
-                print(task2)
+                #print(task2)
 
-                maximum = max(jdist4, jdist5, jdist6, jdist7)
-                if (maximum >= 0.01):
+                maximum = max(jdist4,jdist5)
+                
+                if (maximum >= 0.1):
+                    print("SOS")
                     for i in range(7):
-                        self.joint_angvel[i] = task1[i, 0] + task2[i, 0]
+                        self.joint_angvel[i] = task1[i,0]+task2[i, 0]
                 else:
+                    print("Complete")
                     for i in range(7):
-                        self.joint_angvel[i] = task1[i, 0]
+                        self.joint_angvel[i] = task1[i, 0] 
                 # Convertion to angular position after integrating the angular speed in time
                 # Calculate time interval
                 time_prev = time_now
