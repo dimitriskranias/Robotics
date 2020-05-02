@@ -207,8 +207,12 @@ class xArm7_controller():
                 K25 = 10
 
                 #Middle of obstacles
-                #yobst = (self.model_states.pose[1].position.y + self.model_states.pose[2].position.y) / 2
-                yobst = 0 
+                yobst = (self.model_states.pose[1].position.y + self.model_states.pose[2].position.y) / 2
+
+                if from_A_to_B:
+                    yobst = 0.1 + yobst
+                else :
+                    yobst = -0.05 + yobst
 
                 #Distances of Joints from the middle of the obstacles
                 jdist4 = (1/2) * Kc * ((self.A04[1,3] - yobst) ** 2)
@@ -243,14 +247,6 @@ class xArm7_controller():
 
                 x = l4 *math.sin(theta1)
                 y = l4 *math.cos(theta1)
-
-                print("4th joint")
-
-                print(self.A04[1,3])
-
-                print("5th joint")
-                print(self.A05[1,3])
-
              
                 size = (7,1)
                 yd4_ = np.zeros(size)
@@ -272,6 +268,8 @@ class xArm7_controller():
                 yd5_[5] = 0
                 yd5_[6] = 0
 
+                print(self.A07[1,3])
+
 
 
 
@@ -285,11 +283,9 @@ class xArm7_controller():
                 maximum = max(jdist4,jdist5)
                 
                 if (maximum >= 0.1):
-                    print("SOS")
                     for i in range(7):
                         self.joint_angvel[i] = task1[i,0]+task2[i, 0]
                 else:
-                    print("Complete")
                     for i in range(7):
                         self.joint_angvel[i] = task1[i, 0] 
                 # Convertion to angular position after integrating the angular speed in time
