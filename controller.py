@@ -83,7 +83,7 @@ class xArm7_controller():
 
     def publish(self):
 
-
+        #Values chosen by using path planning from given configuration while having obstacle avoidance task
         A=0.1935087641537656
         B=0.8437180160844724
         C=0.15734128218780974
@@ -96,8 +96,8 @@ class xArm7_controller():
         self.joint_angpos = [A,B,C,D,E,F,G]
         tmp_rate = rospy.Rate(1)
         tmp_rate.sleep()
-        self.joint5_pos_pub.publish(self.joint_angpos[4])
         self.joint4_pos_pub.publish(self.joint_angpos[3])
+        self.joint5_pos_pub.publish(self.joint_angpos[4])
         self.joint6_pos_pub.publish(self.joint_angpos[5])
         self.joint7_pos_pub.publish(self.joint_angpos[6])
         tmp_rate.sleep()
@@ -117,7 +117,7 @@ class xArm7_controller():
         
         
         #Duration of Movement from Start to Final Position 
-        T = 1
+        T = 2
         Tmax = int(100*T+1)
 
         #Samples
@@ -168,7 +168,7 @@ class xArm7_controller():
                 self.A05 = self.kinematics.tf_A05(self.joint_angpos)
                 self.A06 = self.kinematics.tf_A06(self.joint_angpos)
                 self.A07 = self.kinematics.tf_A07(self.joint_angpos)
-                #print(self.A07)
+                print(self.A07)
 
                 # Compute jacobian matrix
                 J = self.kinematics.compute_jacobian(self.joint_angpos)
@@ -181,24 +181,22 @@ class xArm7_controller():
                                   [zd_[tk]]])
                 #print("Des Velocity")
                 #print(p1d_)
-                p1d = np.matrix([[xd[tk]],\
+                p1d = np.matrix([[0.6043],\
                                  [yd.item(tk)],\
-                                 [zd[tk]]])
-                #print("Des Position")
-                #print(p1d)
+                                 [0.1508]])
+                print("Des Position")
+                print(p1d)
                 f1q = np.matrix([[self.A07[0,3]],\
                                  [self.A07[1,3]],\
                                  [self.A07[2,3]]])
-                #print("Position")
-                #print(f1q)
+                print("Position")
+                print(f1q)
 
                 #Task 1
-                K1 = 40
+                K1 = 100
                 parenthesis1 = p1d_ + K1 * (p1d - f1q) 
                 task1 = np.dot(pinvJ, parenthesis1)
                 #print(task1)
-                #for i in range(7):
-                #    self.joint_angvel[i] = task1[i, 0]
                 #print("AngPos")
                 #print(self.joint_angpos)
                 #print("Callback")
@@ -211,10 +209,10 @@ class xArm7_controller():
 
                 #Middle of obstacles
                 yobst = (self.model_states.pose[1].position.y + self.model_states.pose[2].position.y) / 2
-
+                print(self.model_states.pose[1].position.y)
                 if from_A_to_B:
-                    yobst = 0.1 + yobst
-                else :
+                    yobst = 0.075 + yobst
+                else:
                     yobst = -0.05 + yobst
 
                 #Distances of Joints from the middle of the obstacles
@@ -285,7 +283,7 @@ class xArm7_controller():
 
                 maximum = max(jdist4,jdist5)
                 
-                if (maximum >= 0.1):
+                if (maximum >= 0.05):
                     for i in range(7):
                         self.joint_angvel[i] = task1[i,0]+task2[i, 0]
                 else:
@@ -324,7 +322,6 @@ class xArm7_controller():
             else:
                 tk += 2
             from_A_to_B = not from_A_to_B
-
 
     def turn_off(self):
         pass
