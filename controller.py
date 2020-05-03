@@ -205,7 +205,9 @@ class xArm7_controller():
                 #Task 2
                 Kc = 10
                 K24 = 20
+                K23 = 10
                 K25 = 10
+
 
                 #Middle of obstacles
                 yobst = (self.model_states.pose[1].position.y + self.model_states.pose[2].position.y) / 2
@@ -216,6 +218,7 @@ class xArm7_controller():
                     yobst = -0.05 + yobst
 
                 #Distances of Joints from the middle of the obstacles
+                jdist3 = (1/2) * Kc * ((self.A03[1,3] - yobst) ** 2)
                 jdist4 = (1/2) * Kc * ((self.A04[1,3] - yobst) ** 2)
                 jdist5 = (1/2) * Kc * ((self.A05[1,3] - yobst) ** 2)
 
@@ -248,8 +251,21 @@ class xArm7_controller():
 
                 x = l4 *math.sin(theta1)
                 y = l4 *math.cos(theta1)
-             
+
+
                 size = (7,1)
+                yd3_ = np.zeros(size)
+                yd3_[0] = -Kc * (self.A03[1,3] - yobst) * l2*c1*s2
+                yd3_[1] = -Kc * (self.A03[1,3] - yobst) * l2*c2*s1
+                yd3_[2] = 0
+                yd3_[3] = 0
+                yd3_[4] = 0
+                yd3_[5] = 0
+                yd3_[6] = 0
+
+
+             
+                
                 yd4_ = np.zeros(size)
                 yd4_[0] = -Kc * (self.A04[1,3] - yobst) * (l2*c1*s2 - l3*(s1*s3 - c1*c2*c3))
                 yd4_[1] = -Kc * (self.A04[1,3] - yobst) * (l2*c2*s1 - l3*c3*s1*s2)
@@ -259,7 +275,6 @@ class xArm7_controller():
                 yd4_[5] = 0
                 yd4_[6] = 0
 
-                size = (7,1)
                 yd5_ = np.zeros(size)
                 yd5_[0] = -Kc * (self.A05[1,3] - yobst) * (l2*c1*s2 - x*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4) - y*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2) - l3*(s1*s3 - c1*c2*c3))
                 yd5_[1] = -Kc * (self.A05[1,3] - yobst) * (-s1*(y*c2*c4 - l2*c2 + l3*c3*s2 - x*c2*s4 + x*c3*c4*s2 + y*c3*s2*s4))
@@ -269,13 +284,14 @@ class xArm7_controller():
                 yd5_[5] = 0
                 yd5_[6] = 0
 
-                print(self.A07[1,3])
-
-
-
-
+                #print(self.A07[1,3])
+                
+                
                 parenthesis21 = np.eye(7) - np.dot(pinvJ, J)
-                parenthesis22 = K24 * yd4_ + K25*yd5_
+                if from_A_to_B:
+                    parenthesis22 = K24 * yd4_ + K25*yd5_ 
+                else :
+                    parenthesis22 = K24 * yd4_ + K23*yd3_ 
                 
                 task2 = np.dot(parenthesis21, parenthesis22)
                 #print(np.eye(7) - np.dot(pinvJ, J))
