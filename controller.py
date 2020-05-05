@@ -297,7 +297,7 @@ class xArm7_controller():
                 #print(np.eye(7) - np.dot(pinvJ, J))
                 #print(task2)
 
-                maximum = max(jdist4,jdist5)
+                maximum = max(jdist3,jdist4,jdist5)
                 
                 if (maximum >= 0.05):
                     for i in range(7):
