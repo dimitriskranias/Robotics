@@ -61,6 +61,22 @@ class xArm7_controller():
         # Obstacles
         self.model_states_sub = rospy.Subscriber('/gazebo/model_states', ModelStates, self.model_states_callback, queue_size=1)
 
+        """
+        self.pub1 = rospy.Publisher("/x_position_end_effector", Float64, queue_size=100)
+        self.pub2 = rospy.Publisher("/y_position_end_effector", Float64, queue_size=100)
+        self.pub3 = rospy.Publisher("/z_position_end_effector", Float64, queue_size=100)
+
+        self.obs1 = rospy.Publisher("/y_position_Green_Obstacle", Float64, queue_size=100)
+        self.obs2 = rospy.Publisher("/y_position_Red_Obstacle", Float64, queue_size=100)
+        
+        self.joint_3_dist_Green = rospy.Publisher("/Distance_joint_3_from_Green_Obstacle", Float64, queue_size=100)
+        self.joint_3_dist_Red = rospy.Publisher("/Distance_joint_3_from_Red_Obstacle", Float64, queue_size=100)
+        
+        self.joint_4_dist_Green = rospy.Publisher("/Distance_joint_4_from_Green_Obstacle", Float64, queue_size=100)
+        self.joint_4_dist_Red = rospy.Publisher("/Distance_joint_4_from_Red_Obstacle", Float64, queue_size=100)
+        
+        self.joint_5_dist_Green = rospy.Publisher("/Distance_joint_5_from_Green_Obstacle", Float64, queue_size=100)
+        """
         #Publishing rate
         self.period = 1.0/rate
         self.pub_rate = rospy.Rate(rate)
@@ -329,7 +345,27 @@ class xArm7_controller():
                 self.joint5_pos_pub.publish(self.joint_angpos[4])
                 self.joint6_pos_pub.publish(self.joint_angpos[5])
                 self.joint7_pos_pub.publish(self.joint_angpos[6])
+                
+                """
+                self.pub1.publish(self.A07[0,3])
+                self.pub2.publish(self.A07[1,3])
+                self.pub3.publish(self.A07[2,3])
 
+                green = self.model_states.pose[1].position.y
+                red = self.model_states.pose[2].position.y
+                
+                self.obs1.publish(green)
+                self.obs2.publish(red)
+
+                self.joint_3_dist_Green.publish(self.A03[1,3]-green)
+                self.joint_3_dist_Red.publish(red - self.A03[1,3])
+
+                self.joint_4_dist_Green.publish(self.A04[1,3]-green)
+                self.joint_4_dist_Red.publish(red - self.A04[1,3])
+
+                self.joint_5_dist_Green.publish(self.A05[1,3]-green) 
+                """             
+                
                 self.pub_rate.sleep()
 
                 if(from_A_to_B):
