@@ -35,5 +35,15 @@ pex= T7(1,4);
 pey= T7(2,4);
 pez= T7(3,4);
 
-%Jacobian Computation
+% Jacobian Computation
 J = simplify(jacobian([pex,pey,pez],[q1,q2,q3,q4,q5,q6,q7]));
+
+% Finding gradients for criterion of subtask2 
+
+ks1 = gradient(T3(2,4), [q1,q2])
+ks2 = gradient(T4(2,4), [q1,q2,q3])
+ks3 = gradient(T5(2,4), [q1,q2,q3,q4])
+
+
+
+
