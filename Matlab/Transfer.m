@@ -1,4 +1,4 @@
-function [ T ] = Transfer(a,b,c,d)% D-H Homogeneous Transformation Matrix (a alpha d theta) 
+function [ T ] = Transfer(a,b,c,d) % D-H Homogeneous Transformation Matrix (alpha a d theta) 
     %a = Rot(x)
     %b = Tra(x)
     %c = d = Tra(z)

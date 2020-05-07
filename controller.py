@@ -168,7 +168,7 @@ class xArm7_controller():
                 self.A05 = self.kinematics.tf_A05(self.joint_angpos)
                 self.A06 = self.kinematics.tf_A06(self.joint_angpos)
                 self.A07 = self.kinematics.tf_A07(self.joint_angpos)
-                print(self.A07)
+                #print(self.A07)
 
                 # Compute jacobian matrix
                 J = self.kinematics.compute_jacobian(self.joint_angpos)
@@ -184,13 +184,13 @@ class xArm7_controller():
                 p1d = np.matrix([[0.6043],\
                                  [yd.item(tk)],\
                                  [0.1508]])
-                print("Des Position")
-                print(p1d)
+                #print("Des Position")
+                #print(p1d)
                 f1q = np.matrix([[self.A07[0,3]],\
                                  [self.A07[1,3]],\
                                  [self.A07[2,3]]])
-                print("Position")
-                print(f1q)
+                #print("Position")
+                #print(f1q)
 
                 #Task 1
                 K1 = 100
@@ -202,39 +202,39 @@ class xArm7_controller():
                 #print("Callback")
                 #print(self.joint_states.position)
 
-                #Task 2
+                #Gains needed for task 2
                 Kc = 10
+                K23 = 15
                 K24 = 20
-                K23 = 10
                 K25 = 10
 
 
                 #Middle of obstacles
                 yobst = (self.model_states.pose[1].position.y + self.model_states.pose[2].position.y) / 2
-                print(self.model_states.pose[1].position.y)
+                
                 if from_A_to_B:
-                    yobst = 0.075 + yobst
+                    yobst = 0.06 + yobst
                 else:
                     yobst = -0.05 + yobst
 
-                #Distances of Joints from the middle of the obstacles
+                #Distances of Joints from the middle of the obstacles(Criteria)
                 jdist3 = (1/2) * Kc * ((self.A03[1,3] - yobst) ** 2)
                 jdist4 = (1/2) * Kc * ((self.A04[1,3] - yobst) ** 2)
                 jdist5 = (1/2) * Kc * ((self.A05[1,3] - yobst) ** 2)
 
-                #print(jdist7)
+                #Initialisation of joint lengths l2, l3, l4 and angle theta1
+                l2 = self.kinematics.l2
+                l3 = self.kinematics.l3
+                l4 = self.kinematics.l4
+                theta1 = self.kinematics.theta1
 
-                l2 = 0.293
-                l3 = 0.0525
-
+                #Angular positions
                 q1 = self.joint_angpos[0]
                 q2 = self.joint_angpos[1]
                 q3 = self.joint_angpos[2]
                 q4 = self.joint_angpos[3]
-                q5 = self.joint_angpos[4]
-                q6 = self.joint_angpos[5]
-                q7 = self.joint_angpos[6]
 
+                #Sine and cosine functions
                 c1 = math.cos(q1)
                 c2 = math.cos(q2)
                 c3 = math.cos(q3)
@@ -245,15 +245,13 @@ class xArm7_controller():
                 s3 = math.sin(q3)
                 s4 = math.sin(q4)
 
-                theta1 = 0.2225
-                l4 = 0.3512
-
-
-                x = l4 *math.sin(theta1)
-                y = l4 *math.cos(theta1)
+                x = l4 * math.sin(theta1)
+                y = l4 * math.cos(theta1)
 
 
                 size = (7,1)
+
+                #Gradient of the criteria
                 yd3_ = np.zeros(size)
                 yd3_[0] = -Kc * (self.A03[1,3] - yobst) * l2*c1*s2
                 yd3_[1] = -Kc * (self.A03[1,3] - yobst) * l2*c2*s1
@@ -262,9 +260,6 @@ class xArm7_controller():
                 yd3_[4] = 0
                 yd3_[5] = 0
                 yd3_[6] = 0
-
-
-             
                 
                 yd4_ = np.zeros(size)
                 yd4_[0] = -Kc * (self.A04[1,3] - yobst) * (l2*c1*s2 - l3*(s1*s3 - c1*c2*c3))
@@ -283,28 +278,34 @@ class xArm7_controller():
                 yd5_[4] = 0
                 yd5_[5] = 0
                 yd5_[6] = 0
-
-                #print(self.A07[1,3])
                 
-                
+                #Computing task 2
                 parenthesis21 = np.eye(7) - np.dot(pinvJ, J)
+                print("Obstacles Positions")
+                print(self.model_states.pose[1].position.y)
+                print(self.model_states.pose[2].position.y)
                 if from_A_to_B:
-                    parenthesis22 = K24 * yd4_ + K25*yd5_ 
-                else :
-                    parenthesis22 = K24 * yd4_ + K23*yd3_ 
+                    parenthesis22 = K23 * yd3_ + K24 * yd4_ + K25 * yd5_ 
+                else:
+                    parenthesis22 = K23 * yd3_ + K24 * yd4_ 
                 
                 task2 = np.dot(parenthesis21, parenthesis22)
                 #print(np.eye(7) - np.dot(pinvJ, J))
                 #print(task2)
 
-                maximum = max(jdist3,jdist4,jdist5)
+                #Algorithm
+                if from_A_to_B:
+                    maximum = max(jdist4, jdist5)
+                else:
+                    maximum = max(jdist3, jdist4) 
                 
-                if (maximum >= 0.05):
+                if (maximum >= 0.025):
                     for i in range(7):
-                        self.joint_angvel[i] = task1[i,0]+task2[i, 0]
+                        self.joint_angvel[i] = task1[i,0] + task2[i,0]
                 else:
                     for i in range(7):
-                        self.joint_angvel[i] = task1[i, 0] 
+                        self.joint_angvel[i] = task1[i,0] 
+
                 # Convertion to angular position after integrating the angular speed in time
                 # Calculate time interval
                 time_prev = time_now
@@ -312,9 +313,13 @@ class xArm7_controller():
                 time_now = rostime_now.to_nsec()
                 dt = (time_now - time_prev)/1e9
 
+                print("Angpos before integration")
+                #print(self.joint_states.position)
+                print(self.joint_angpos)
                 # Integration
                 self.joint_angpos = np.add(self.joint_angpos, [index * dt for index in self.joint_angvel])
-                #print(self.joint_angpos)
+                print("Angpos after integration")
+                print(self.joint_angpos)
 
                 # Publish the new joint's angular positions
                 self.joint1_pos_pub.publish(self.joint_angpos[0])
