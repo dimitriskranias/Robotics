@@ -61,7 +61,6 @@ class xArm7_controller():
         # Obstacles
         self.model_states_sub = rospy.Subscriber('/gazebo/model_states', ModelStates, self.model_states_callback, queue_size=1)
 
-        """
         self.pub1 = rospy.Publisher("/x_position_end_effector", Float64, queue_size=100)
         self.pub2 = rospy.Publisher("/y_position_end_effector", Float64, queue_size=100)
         self.pub3 = rospy.Publisher("/z_position_end_effector", Float64, queue_size=100)
@@ -76,7 +75,7 @@ class xArm7_controller():
         self.joint_4_dist_Red = rospy.Publisher("/Distance_joint_4_from_Red_Obstacle", Float64, queue_size=100)
         
         self.joint_5_dist_Green = rospy.Publisher("/Distance_joint_5_from_Green_Obstacle", Float64, queue_size=100)
-        """
+
         #Publishing rate
         self.period = 1.0/rate
         self.pub_rate = rospy.Rate(rate)
@@ -131,7 +130,6 @@ class xArm7_controller():
         self.A07 = self.kinematics.tf_A07(self.joint_angpos)
         A07 = self.A07
         
-        
         #Duration of Movement from Start to Final Position 
         T = 2
         Tmax = int(100*T+1)
@@ -163,13 +161,13 @@ class xArm7_controller():
         #(xd_,yd_,zd_):velocity 
 
         xd = np.ones(Tmax)*xde_0
-        xd_= np.zeros(Tmax)
+        xd_ = np.zeros(Tmax)
 
         yd  = a0 + a2*np.power(t, 2) + a3*np.power(t, 3)
         yd_ = 2*(a2*t) + 3*a3*np.power(t, 2)
 
         zd = np.ones(Tmax)*zde_0
-        zd_= np.zeros(Tmax)
+        zd_ = np.zeros(Tmax)
 
         
         from_A_to_B = True
@@ -184,7 +182,6 @@ class xArm7_controller():
                 self.A05 = self.kinematics.tf_A05(self.joint_angpos)
                 self.A06 = self.kinematics.tf_A06(self.joint_angpos)
                 self.A07 = self.kinematics.tf_A07(self.joint_angpos)
-                #print(self.A07)
 
                 # Compute jacobian matrix
                 J = self.kinematics.compute_jacobian(self.joint_angpos)
@@ -195,41 +192,30 @@ class xArm7_controller():
                 p1d_ = np.matrix([[xd_[tk]],\
                                   [yd_.item(tk)],\
                                   [zd_[tk]]])
-                #print("Des Velocity")
-                #print(p1d_)
+
                 p1d = np.matrix([[0.6043],\
                                  [yd.item(tk)],\
                                  [0.1508]])
-                #print("Des Position")
-                #print(p1d)
+
                 f1q = np.matrix([[self.A07[0,3]],\
                                  [self.A07[1,3]],\
                                  [self.A07[2,3]]])
-                #print("Position")
-                #print(f1q)
 
                 #Task 1
                 K1 = 100
                 parenthesis1 = p1d_ + K1 * (p1d - f1q) 
                 task1 = np.dot(pinvJ, parenthesis1)
-                #print(task1)
-                #print("AngPos")
-                #print(self.joint_angpos)
-                #print("Callback")
-                #print(self.joint_states.position)
 
                 #Gains needed for task 2
                 Kc = 10
                 K23 = 15
-                K24 = 20
-                K25 = 10
-
+                K24 = 25
 
                 #Middle of obstacles
                 yobst = (self.model_states.pose[1].position.y + self.model_states.pose[2].position.y) / 2
                 
                 if from_A_to_B:
-                    yobst = 0.06 + yobst
+                    yobst = 0.075 + yobst
                 else:
                     yobst = -0.05 + yobst
 
@@ -264,7 +250,6 @@ class xArm7_controller():
                 x = l4 * math.sin(theta1)
                 y = l4 * math.cos(theta1)
 
-
                 size = (7,1)
 
                 #Gradient of the criteria
@@ -285,37 +270,17 @@ class xArm7_controller():
                 yd4_[4] = 0
                 yd4_[5] = 0
                 yd4_[6] = 0
-
-                yd5_ = np.zeros(size)
-                yd5_[0] = -Kc * (self.A05[1,3] - yobst) * (l2*c1*s2 - x*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4) - y*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2) - l3*(s1*s3 - c1*c2*c3))
-                yd5_[1] = -Kc * (self.A05[1,3] - yobst) * (-s1*(y*c2*c4 - l2*c2 + l3*c3*s2 - x*c2*s4 + x*c3*c4*s2 + y*c3*s2*s4))
-                yd5_[2] = -Kc * (self.A05[1,3] - yobst) * ((c1*c3 - c2*s1*s3)*(l3 + x*c4 + y*s4))
-                yd5_[3] = -Kc * (self.A05[1,3] - yobst) * (y*(c4*(c1*s3 + c2*c3*s1) + s1*s2*s4) - x*(s4*(c1*s3 + c2*c3*s1) - c4*s1*s2))
-                yd5_[4] = 0
-                yd5_[5] = 0
-                yd5_[6] = 0
                 
                 #Computing task 2
-                parenthesis21 = np.eye(7) - np.dot(pinvJ, J)
-                print("Obstacles Positions")
-                print(self.model_states.pose[1].position.y)
-                print(self.model_states.pose[2].position.y)
-                if from_A_to_B:
-                    parenthesis22 = K23 * yd3_ + K24 * yd4_ + K25 * yd5_ 
-                else:
-                    parenthesis22 = K23 * yd3_ + K24 * yd4_ 
+                parenthesis21 = np.eye(7) - np.dot(pinvJ, J)                    
+                parenthesis22 = K23 * yd3_ + K24 * yd4_
                 
                 task2 = np.dot(parenthesis21, parenthesis22)
-                #print(np.eye(7) - np.dot(pinvJ, J))
-                #print(task2)
 
                 #Algorithm
-                if from_A_to_B:
-                    maximum = max(jdist4, jdist5)
-                else:
-                    maximum = max(jdist3, jdist4) 
+                maximum = max(jdist3, jdist4)
                 
-                if (maximum >= 0.025):
+                if (maximum >= 0.03):
                     for i in range(7):
                         self.joint_angvel[i] = task1[i,0] + task2[i,0]
                 else:
@@ -329,13 +294,8 @@ class xArm7_controller():
                 time_now = rostime_now.to_nsec()
                 dt = (time_now - time_prev)/1e9
 
-                print("Angpos before integration")
-                #print(self.joint_states.position)
-                print(self.joint_angpos)
                 # Integration
                 self.joint_angpos = np.add(self.joint_angpos, [index * dt for index in self.joint_angvel])
-                print("Angpos after integration")
-                print(self.joint_angpos)
 
                 # Publish the new joint's angular positions
                 self.joint1_pos_pub.publish(self.joint_angpos[0])
@@ -345,8 +305,7 @@ class xArm7_controller():
                 self.joint5_pos_pub.publish(self.joint_angpos[4])
                 self.joint6_pos_pub.publish(self.joint_angpos[5])
                 self.joint7_pos_pub.publish(self.joint_angpos[6])
-                
-                """
+
                 self.pub1.publish(self.A07[0,3])
                 self.pub2.publish(self.A07[1,3])
                 self.pub3.publish(self.A07[2,3])
@@ -357,15 +316,14 @@ class xArm7_controller():
                 self.obs1.publish(green)
                 self.obs2.publish(red)
 
-                self.joint_3_dist_Green.publish(self.A03[1,3]-green)
+                self.joint_3_dist_Green.publish(self.A03[1,3] - green)
                 self.joint_3_dist_Red.publish(red - self.A03[1,3])
 
-                self.joint_4_dist_Green.publish(self.A04[1,3]-green)
+                self.joint_4_dist_Green.publish(self.A04[1,3] - green)
                 self.joint_4_dist_Red.publish(red - self.A04[1,3])
 
-                self.joint_5_dist_Green.publish(self.A05[1,3]-green) 
-                """             
-                
+                self.joint_5_dist_Green.publish(self.A05[1,3] - green) 
+
                 self.pub_rate.sleep()
 
                 if(from_A_to_B):
