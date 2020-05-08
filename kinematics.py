@@ -23,6 +23,7 @@ class xArm7_kinematics():
 
     def compute_jacobian(self, r_joints_array):
 
+        #Initialisations
         l1  = self.l1
         l2  = self.l2
         l3  = self.l3
@@ -61,17 +62,19 @@ class xArm7_kinematics():
         s6 = math.sin(q6)
         s7 = math.sin(q7)
 
-        J_11 =  -l3*(c1*s3 + c2*c3*s1) - x*(c4*(c1*s3 + c2*c3*s1) + s1*s2*s4) - y*(s4*(c1*s3 + c2*c3*s1) - c4*s1*s2) - w*(c6*(s4*(c1*s3 + c2*c3*s1) - c4*s1*s2) - s6*(c5*(c4*(c1*s3 + c2*c3*s1) + s1*s2*s4) - s5*(c1*c3 - c2*s1*s3))) - z*(s6*(s4*(c1*s3 + c2*c3*s1) - c4*s1*s2) + c6*(c5*(c4*(c1*s3 + c2*c3*s1) + s1*s2*s4) - s5*(c1*c3 - c2*s1*s3))) - l2*s1*s2
+        ########################
 
-        J_12 =  x*(c1*c2*s4 - c1*c3*c4*s2) - z*(s6*(c1*c2*c4 + c1*c3*s2*s4) - c6*(c5*(c1*c2*s4 - c1*c3*c4*s2) - c1*s2*s3*s5)) - w*(c6*(c1*c2*c4 + c1*c3*s2*s4) + s6*(c5*(c1*c2*s4 - c1*c3*c4*s2) - c1*s2*s3*s5)) - y*(c1*c2*c4 + c1*c3*s2*s4) + l2*c1*c2 - l3*c1*c3*s2
+        J_11 = -l3*(c1*s3 + c2*c3*s1) - x*(c4*(c1*s3 + c2*c3*s1) + s1*s2*s4) - y*(s4*(c1*s3 + c2*c3*s1) - c4*s1*s2) - w*(c6*(s4*(c1*s3 + c2*c3*s1) - c4*s1*s2) - s6*(c5*(c4*(c1*s3 + c2*c3*s1) + s1*s2*s4) - s5*(c1*c3 - c2*s1*s3))) - z*(s6*(s4*(c1*s3 + c2*c3*s1) - c4*s1*s2) + c6*(c5*(c4*(c1*s3 + c2*c3*s1) + s1*s2*s4) - s5*(c1*c3 - c2*s1*s3))) - l2*s1*s2
 
-        J_13 =  w*(s6*(s5*(s1*s3 - c1*c2*c3) + c4*c5*(c3*s1 + c1*c2*s3)) - c6*s4*(c3*s1 + c1*c2*s3)) - l3*(c3*s1 + c1*c2*s3) - z*(c6*(s5*(s1*s3 - c1*c2*c3) + c4*c5*(c3*s1 + c1*c2*s3)) + s4*s6*(c3*s1 + c1*c2*s3)) - x*c4*(c3*s1 + c1*c2*s3) - y*s4*(c3*s1 + c1*c2*s3)
+        J_12 = x*(c1*c2*s4 - c1*c3*c4*s2) - z*(s6*(c1*c2*c4 + c1*c3*s2*s4) - c6*(c5*(c1*c2*s4 - c1*c3*c4*s2) - c1*s2*s3*s5)) - w*(c6*(c1*c2*c4 + c1*c3*s2*s4) + s6*(c5*(c1*c2*s4 - c1*c3*c4*s2) - c1*s2*s3*s5)) - y*(c1*c2*c4 + c1*c3*s2*s4) + l2*c1*c2 - l3*c1*c3*s2
 
-        J_14 =  x*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2) - z*(s6*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4) - c5*c6*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2)) - w*(c6*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4) + c5*s6*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2)) - y*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4)
+        J_13 = w*(s6*(s5*(s1*s3 - c1*c2*c3) + c4*c5*(c3*s1 + c1*c2*s3)) - c6*s4*(c3*s1 + c1*c2*s3)) - l3*(c3*s1 + c1*c2*s3) - z*(c6*(s5*(s1*s3 - c1*c2*c3) + c4*c5*(c3*s1 + c1*c2*s3)) + s4*s6*(c3*s1 + c1*c2*s3)) - x*c4*(c3*s1 + c1*c2*s3) - y*s4*(c3*s1 + c1*c2*s3)
 
-        J_15 =  (z*c6 - w*s6)*(c3*c5*s1 + c1*c2*c5*s3 - c1*s2*s4*s5 + c4*s1*s3*s5 - c1*c2*c3*c4*s5)
+        J_14 = x*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2) - z*(s6*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4) - c5*c6*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2)) - w*(c6*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4) + c5*s6*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2)) - y*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4)
 
-        J_16 =  w*(s6*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2) + c6*(c5*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4) - s5*(c3*s1 + c1*c2*s3))) - z*(c6*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2) - s6*(c5*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4) - s5*(c3*s1 + c1*c2*s3)))
+        J_15 = (z*c6 - w*s6)*(c3*c5*s1 + c1*c2*c5*s3 - c1*s2*s4*s5 + c4*s1*s3*s5 - c1*c2*c3*c4*s5)
+
+        J_16 = w*(s6*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2) + c6*(c5*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4) - s5*(c3*s1 + c1*c2*s3))) - z*(c6*(s4*(s1*s3 - c1*c2*c3) + c1*c4*s2) - s6*(c5*(c4*(s1*s3 - c1*c2*c3) - c1*s2*s4) - s5*(c3*s1 + c1*c2*s3)))
 
         J_17 = 0
 
@@ -90,15 +93,16 @@ class xArm7_kinematics():
         J_26 = z*(c6*(s4*(c1*s3 + c2*c3*s1) - c4*s1*s2) - s6*(c5*(c4*(c1*s3 + c2*c3*s1) + s1*s2*s4) - s5*(c1*c3 - c2*s1*s3))) - w*(s6*(s4*(c1*s3 + c2*c3*s1) - c4*s1*s2) + c6*(c5*(c4*(c1*s3 + c2*c3*s1) + s1*s2*s4) - s5*(c1*c3 - c2*s1*s3)))
 
         J_27 = 0
+
         ########################
 
-        J_31 =  0
+        J_31 = 0
 
-        J_32 =  w*(s6*(c5*(s2*s4 + c2*c3*c4) + c2*s3*s5) + c6*(c4*s2 - c2*c3*s4)) - z*(c6*(c5*(s2*s4 + c2*c3*c4) + c2*s3*s5) - s6*(c4*s2 - c2*c3*s4)) - x*(s2*s4 + c2*c3*c4) + y*(c4*s2 - c2*c3*s4) - l2*s2 - l3*c2*c3
+        J_32 = w*(s6*(c5*(s2*s4 + c2*c3*c4) + c2*s3*s5) + c6*(c4*s2 - c2*c3*s4)) - z*(c6*(c5*(s2*s4 + c2*c3*c4) + c2*s3*s5) - s6*(c4*s2 - c2*c3*s4)) - x*(s2*s4 + c2*c3*c4) + y*(c4*s2 - c2*c3*s4) - l2*s2 - l3*c2*c3
 
-        J_33 =  s2*(l3*s3 + x*c4*s3 + y*s3*s4 - z*c3*c6*s5 + w*c6*s3*s4 + w*c3*s5*s6 + z*s3*s4*s6 + z*c4*c5*c6*s3 - w*c4*c5*s3*s6)
+        J_33 = s2*(l3*s3 + x*c4*s3 + y*s3*s4 - z*c3*c6*s5 + w*c6*s3*s4 + w*c3*s5*s6 + z*s3*s4*s6 + z*c4*c5*c6*s3 - w*c4*c5*s3*s6)
 
-        J_34 =  x*(c2*c4 + c3*s2*s4) + y*(c2*s4 - c3*c4*s2) + w*(c6*(c2*s4 - c3*c4*s2) - c5*s6*(c2*c4 + c3*s2*s4)) + z*(s6*(c2*s4 - c3*c4*s2) + c5*c6*(c2*c4 + c3*s2*s4))
+        J_34 = x*(c2*c4 + c3*s2*s4) + y*(c2*s4 - c3*c4*s2) + w*(c6*(c2*s4 - c3*c4*s2) - c5*s6*(c2*c4 + c3*s2*s4)) + z*(s6*(c2*s4 - c3*c4*s2) + c5*c6*(c2*c4 + c3*s2*s4))
 
         J_35 = -(z*c6 - w*s6)*(c5*s2*s3 + c2*s4*s5 - c3*c4*s2*s5)
 
