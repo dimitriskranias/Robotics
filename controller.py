@@ -66,6 +66,9 @@ class xArm7_controller():
         self.pub2 = rospy.Publisher("/y_position_end_effector", Float64, queue_size=100)
         self.pub3 = rospy.Publisher("/z_position_end_effector", Float64, queue_size=100)
 
+        self.error_x = rospy.Publisher("/x_error_end_effector", Float64, queue_size=100)
+        self.error_z = rospy.Publisher("/z_error_end_effector", Float64, queue_size=100)
+
         self.obs1 = rospy.Publisher("/y_position_Green_Obstacle", Float64, queue_size=100)
         self.obs2 = rospy.Publisher("/y_position_Red_Obstacle", Float64, queue_size=100)
         
@@ -302,6 +305,9 @@ class xArm7_controller():
                 self.pub1.publish(self.A07[0,3])
                 self.pub2.publish(self.A07[1,3])
                 self.pub3.publish(self.A07[2,3])
+
+                self.error_x.publish(abs(self.A07[0,3] - 0.6043))
+                self.error_z.publish(abs(self.A07[2,3] - 0.1508))
 
                 green = self.model_states.pose[1].position.y
                 red = self.model_states.pose[2].position.y
