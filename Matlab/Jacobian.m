@@ -40,9 +40,8 @@ J = simplify(jacobian([pex,pey,pez],[q1,q2,q3,q4,q5,q6,q7]));
 
 % Finding gradients for criterion of subtask2 
 
-ks1 = gradient(T3(2,4), [q1,q2])
-ks2 = gradient(T4(2,4), [q1,q2,q3])
-ks3 = gradient(T5(2,4), [q1,q2,q3,q4])
+ks3 = gradient(T3(2,4), [q1,q2])
+ks4 = gradient(T4(2,4), [q1,q2,q3])
 
 
 
