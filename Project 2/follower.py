@@ -150,6 +150,7 @@ class mymobibot_follower():
             #Movement
 
             if (state == 0 ):
+                print ("State:",state)
                 self.velocity.linear.x = 0.8
                 self.velocity.angular.z = 0.0
                 sonar_front = self.sonar_F.range
@@ -159,6 +160,7 @@ class mymobibot_follower():
                     state = 1 
 
             elif (state == 1):
+                print ("State:",state)
                 self.velocity.linear.x = 0.0
                 self.velocity.angular.z = -0.8
                 sonar_right = self.sonar_R.range
@@ -168,7 +170,7 @@ class mymobibot_follower():
                     state = 2 
 
             elif (state == 2):
-                print("STATE 2 ")
+                print("State:",state)
 
                 Kp = 20
                 Kd = 2 
@@ -176,11 +178,33 @@ class mymobibot_follower():
                 error_p = (0.5 - self.sonar_FR.range) + (0.45 - self.sonar_R.range)
                 error_d = (previousFR - self.sonar_FR.range) + (previousR - self.sonar_R.range)
 
-                print(Kp*error_p + Kd*error_d/dt)
+                self.velocity.angular.z = -max(min(Kp*error_p + Kd*error_d/dt,0.5),-0.5)
+                print (self.velocity.angular.z )
+                self.velocity.linear.x = 0.0
 
+                print("#####",self.sonar_R.range)
+
+                if (self.sonar_R.range < self.sonar_FR.range - 0.1):
+                    state = 3 
+
+            elif (state == 3 ): 
+                print("State:",state)
+                Kp = 20
+                Kd = 2 
+
+                error_p = (0.5 - self.sonar_FR.range) + (0.45 - self.sonar_R.range)
+                error_d = (previousFR - self.sonar_FR.range) + (previousR - self.sonar_R.range)
 
                 self.velocity.angular.z = -max(min(Kp*error_p + Kd*error_d/dt,0.5),-0.5)
-                self.velocity.linear.x = 0.0
+                print (self.velocity.angular.z )
+                self.velocity.linear.x = 0.8
+
+                if (self.sonar_F.range < 0.45):
+                    state = 1
+
+                
+
+
 
             
             previousFR = self.sonar_FR.range
