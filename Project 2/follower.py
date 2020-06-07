@@ -148,9 +148,11 @@ class mymobibot_follower():
             time_now = rostime_now.to_nsec()
             dt = (time_now - time_prev)/1e9
 
-            Kp = 20
-            Kd = 2 
-            Ki = 1
+            #Gains
+            Kp = 30
+            Kd = 5 
+            Ki = 0
+
             #Define 3 states 
 
             #State 0: From Start Position to Wall 
@@ -160,55 +162,35 @@ class mymobibot_follower():
 
             if (state == 0):
                 print ("State:",state)
-                self.velocity.linear.x = 0.8
+                self.velocity.linear.x = 0.4
                 self.velocity.angular.z = 0.0
                 print("Front Sonar", self.sonar_F.range)
                 
-                if (self.sonar_F.range < 0.45):
+                if (self.sonar_F.range < 0.5):
                     state = 1 
 
             elif (state == 1):
-                print ("State:",state)
-                self.velocity.linear.x = 0.0
-                self.velocity.angular.z = -0.8
-                print("Right Sonar", self.sonar_R.range)
+                print("State:",state)
 
-                if ((self.sonar_R.range < self.sonar_F.range) and (self.sonar_FR.range < self.sonar_F.range )):
+                self.velocity.linear.x = 0.1
+                self.velocity.angular.z = -0.8
+                
+                print ("Right:", self.sonar_R.range)
+                print ("FR:", self.sonar_FR.range)
+                print ("Front:", self.sonar_F.range)
+
+                if ((self.sonar_R.range + 0.3 < self.sonar_F.range) and (self.sonar_FR.range + 0.25 < self.sonar_F.range)):
+                    integral = 0
                     FR_error = 0
                     R_error = 0
                     state = 2 
 
-            elif (state == 2):
-                print("State:",state)
-
-                #Calculating proportional errors via sensors
-                FR_error = 0.5 - self.sonar_FR.range
-                R_error = 0.45 - self.sonar_R.range
-
-                proportional = FR_error + R_error
-
-                #Calculating derivative errors
-                FR_der = FR_error - previousFR_error
-                R_der = R_error - previousR_error
-
-                derivative = (FR_der + R_der) / dt
-
-                self.velocity.angular.z = -max(min(Kp*proportional + Kd*derivative, 0.5), -0.5)
-                print (self.velocity.angular.z)
-                self.velocity.linear.x = 0.0
-
-                print("#####",self.sonar_R.range)
-
-                if (self.sonar_R.range < self.sonar_FR.range - 0.1):
-                    integral = 0
-                    state = 3 
-
-            elif (state == 3): 
+            elif (state == 2): 
                 print("State:",state)
                 
                 #Calculating proportional errors via sensors
-                FR_error = 0.5 - self.sonar_FR.range
-                R_error = 0.45 - self.sonar_R.range
+                FR_error = 0.3 - self.sonar_FR.range
+                R_error = 0.2 - self.sonar_R.range
 
                 proportional = FR_error + R_error
                 integral = integral + proportional * dt 
@@ -217,16 +199,18 @@ class mymobibot_follower():
                 FR_der = FR_error - previousFR_error
                 R_der = R_error - previousR_error
 
-                derivative = (FR_der + R_der) / dt
+                derivative = (FR_der + R_der) / (dt + 10**(-9))
 
                 self.velocity.angular.z = -max(min(Kp*proportional + Ki*integral + Kd*derivative, 0.5), -0.5)
-                print (self.velocity.angular.z)
-                self.velocity.linear.x = 0.8
+                print ("Right:", self.sonar_R.range)
+                print ("FR:", self.sonar_FR.range)
+                print ("Front:", self.sonar_F.range)
+                self.velocity.linear.x = 0.4
 
-                if (self.sonar_F.range < 0.45):
+                if ((self.sonar_R.range + 0.3 >= self.sonar_F.range) or (self.sonar_FR.range + 0.25 >= self.sonar_F.range)):
                     state = 1
 
-            if (state == 2 or state == 3):    
+            if (state == 2):    
                 previousFR_error = FR_error
                 previousR_error = R_error
 
