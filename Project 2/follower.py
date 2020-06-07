@@ -140,14 +140,22 @@ class mymobibot_follower():
 
         while not rospy.is_shutdown():
             
-            # Calculate time interval (in case is needed)
+            # Calculate time interval
+            # Is needed for PID controller 
+
             time_prev = time_now
             rostime_now = rospy.get_rostime()
             time_now = rostime_now.to_nsec()
             dt = (time_now - time_prev)/1e9
-            
-            #Define state , propably inside if (state == 0)
-            #Movement
+
+            #Define 3 states 
+
+            #State 0: From Start Position to Wall 
+            #State 1: Turn without controller 
+            #State 2: Turn with PD controller  
+            #State 3: Wall Following with PID controller 
+
+
 
             if (state == 0 ):
                 print ("State:",state)
@@ -173,7 +181,7 @@ class mymobibot_follower():
                 print("State:",state)
 
                 Kp = 20
-                Kd = 2 
+                Kd = 2
 
                 error_p = (0.5 - self.sonar_FR.range) + (0.45 - self.sonar_R.range)
                 error_d = (previousFR - self.sonar_FR.range) + (previousR - self.sonar_R.range)
@@ -185,17 +193,21 @@ class mymobibot_follower():
                 print("#####",self.sonar_R.range)
 
                 if (self.sonar_R.range < self.sonar_FR.range - 0.1):
+                    integral  = 0
                     state = 3 
 
             elif (state == 3 ): 
                 print("State:",state)
                 Kp = 20
                 Kd = 2 
+                ki = 2
 
                 error_p = (0.5 - self.sonar_FR.range) + (0.45 - self.sonar_R.range)
                 error_d = (previousFR - self.sonar_FR.range) + (previousR - self.sonar_R.range)
 
-                self.velocity.angular.z = -max(min(Kp*error_p + Kd*error_d/dt,0.5),-0.5)
+                integral = integral + error_p * dt 
+
+                self.velocity.angular.z = -max(min(Kp*error_p + Kd*error_d/dt + integral,0.5),-0.5)
                 print (self.velocity.angular.z )
                 self.velocity.linear.x = 0.8
 
