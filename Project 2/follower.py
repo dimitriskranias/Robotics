@@ -148,6 +148,9 @@ class mymobibot_follower():
             time_now = rostime_now.to_nsec()
             dt = (time_now - time_prev)/1e9
 
+            Kp = 20
+            Kd = 2 
+            Ki = 1
             #Define 3 states 
 
             #State 0: From Start Position to Wall 
@@ -155,14 +158,11 @@ class mymobibot_follower():
             #State 2: Turn with PD controller  
             #State 3: Wall Following with PID controller 
 
-
-
-            if (state == 0 ):
+            if (state == 0):
                 print ("State:",state)
                 self.velocity.linear.x = 0.8
                 self.velocity.angular.z = 0.0
-                sonar_front = self.sonar_F.range
-                print("Front Sonar",sonar_front)
+                print("Front Sonar", self.sonar_F.range)
                 
                 if (self.sonar_F.range < 0.45):
                     state = 1 
@@ -171,73 +171,70 @@ class mymobibot_follower():
                 print ("State:",state)
                 self.velocity.linear.x = 0.0
                 self.velocity.angular.z = -0.8
-                sonar_right = self.sonar_R.range
-                print("Right Sonar",sonar_right)
+                print("Right Sonar", self.sonar_R.range)
 
-                if ((self.sonar_R.range < self.sonar_F.range)  and (self.sonar_FR.range < self.sonar_F.range )):
+                if ((self.sonar_R.range < self.sonar_F.range) and (self.sonar_FR.range < self.sonar_F.range )):
+                    FR_error = 0
+                    R_error = 0
                     state = 2 
 
             elif (state == 2):
                 print("State:",state)
 
-                Kp = 20
-                Kd = 2
+                #Calculating proportional errors via sensors
+                FR_error = 0.5 - self.sonar_FR.range
+                R_error = 0.45 - self.sonar_R.range
 
-                error_p = (0.5 - self.sonar_FR.range) + (0.45 - self.sonar_R.range)
-                error_d = (previousFR - self.sonar_FR.range) + (previousR - self.sonar_R.range)
+                proportional = FR_error + R_error
 
-                self.velocity.angular.z = -max(min(Kp*error_p + Kd*error_d/dt,0.5),-0.5)
-                print (self.velocity.angular.z )
+                #Calculating derivative errors
+                FR_der = FR_error - previousFR_error
+                R_der = R_error - previousR_error
+
+                derivative = (FR_der + R_der) / dt
+
+                self.velocity.angular.z = -max(min(Kp*proportional + Kd*derivative, 0.5), -0.5)
+                print (self.velocity.angular.z)
                 self.velocity.linear.x = 0.0
 
                 print("#####",self.sonar_R.range)
 
                 if (self.sonar_R.range < self.sonar_FR.range - 0.1):
-                    integral  = 0
+                    integral = 0
                     state = 3 
 
-            elif (state == 3 ): 
+            elif (state == 3): 
                 print("State:",state)
-                Kp = 20
-                Kd = 2 
-                ki = 2
+                
+                #Calculating proportional errors via sensors
+                FR_error = 0.5 - self.sonar_FR.range
+                R_error = 0.45 - self.sonar_R.range
 
-                error_p = (0.5 - self.sonar_FR.range) + (0.45 - self.sonar_R.range)
-                error_d = (previousFR - self.sonar_FR.range) + (previousR - self.sonar_R.range)
+                proportional = FR_error + R_error
+                integral = integral + proportional * dt 
 
-                integral = integral + error_p * dt 
+                #Calculating derivative errors
+                FR_der = FR_error - previousFR_error
+                R_der = R_error - previousR_error
 
-                self.velocity.angular.z = -max(min(Kp*error_p + Kd*error_d/dt + integral,0.5),-0.5)
-                print (self.velocity.angular.z )
+                derivative = (FR_der + R_der) / dt
+
+                self.velocity.angular.z = -max(min(Kp*proportional + Ki*integral + Kd*derivative, 0.5), -0.5)
+                print (self.velocity.angular.z)
                 self.velocity.linear.x = 0.8
 
                 if (self.sonar_F.range < 0.45):
                     state = 1
 
-                
-
-
-
-            
-            previousFR = self.sonar_FR.range
-            previousR = self.sonar_R.range
-
-            
-            """
-            INSERT YOUR MAIN CODE HERE
-            self.velocity.linear.x = ...
-            self.velocity.angular.z = ...
-            """
+            if (state == 2 or state == 3):    
+                previousFR_error = FR_error
+                previousR_error = R_error
 
 
             # Publish the new joint's angular positions
             self.velocity_pub.publish(self.velocity)
 
             self.pub_rate.sleep()
-
-
-            
-
             
 
     def turn_off(self):
