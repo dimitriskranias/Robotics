@@ -69,6 +69,11 @@ class mymobibot_follower():
         self.sonar_left_sub = rospy.Subscriber('/sensor/sonar_L', Range, self.sonar_left_callback, queue_size=1)
         self.sonar_right_sub = rospy.Subscriber('/sensor/sonar_R', Range, self.sonar_right_callback, queue_size=1)
 
+        #Create new publishers for plotting:
+        self.pub1 = rospy.Publisher("/R_sonar_error", Float64, queue_size=100)
+        self.pub2 = rospy.Publisher("/FR_sonar_error", Float64, queue_size=100)
+        self.pub3 = rospy.Publisher("/linear_x_velocity", Float64, queue_size=100)
+        
         #Publishing rate
         self.period = 1.0/rate
         self.pub_rate = rospy.Rate(rate)
@@ -141,7 +146,6 @@ class mymobibot_follower():
         while not rospy.is_shutdown():
             
             # Calculate time interval
-            # Is needed for PID controller 
 
             time_prev = time_now
             rostime_now = rospy.get_rostime()
@@ -151,49 +155,38 @@ class mymobibot_follower():
             #Gains
             Kp = 30
             Kd = 5 
-            Ki = 0
-
-            #Define 3 states 
 
             #State 0: From Start Position to Wall 
             #State 1: Turn without controller 
-            #State 2: Turn with PD controller  
-            #State 3: Wall Following with PID controller 
+            #State 2: Wall Following with PD controller 
 
             if (state == 0):
-                print ("State:",state)
+                #Set the right velocities for state 0
                 self.velocity.linear.x = 0.4
                 self.velocity.angular.z = 0.0
-                print("Front Sonar", self.sonar_F.range)
                 
+                #Condition for next state
                 if (self.sonar_F.range < 0.5):
                     state = 1 
 
             elif (state == 1):
-                print("State:",state)
-
+                #Set the right velocities for state 1
                 self.velocity.linear.x = 0.1
-                self.velocity.angular.z = -0.8
-                
-                print ("Right:", self.sonar_R.range)
-                print ("FR:", self.sonar_FR.range)
-                print ("Front:", self.sonar_F.range)
+                self.velocity.angular.z = -1.5
 
+                #Condition for next state
                 if ((self.sonar_R.range + 0.3 < self.sonar_F.range) and (self.sonar_FR.range + 0.25 < self.sonar_F.range)):
                     integral = 0
                     FR_error = 0
                     R_error = 0
                     state = 2 
 
-            elif (state == 2): 
-                print("State:",state)
-                
+            elif (state == 2):              
                 #Calculating proportional errors via sensors
                 FR_error = 0.3 - self.sonar_FR.range
                 R_error = 0.2 - self.sonar_R.range
 
                 proportional = FR_error + R_error
-                integral = integral + proportional * dt 
 
                 #Calculating derivative errors
                 FR_der = FR_error - previousFR_error
@@ -201,22 +194,27 @@ class mymobibot_follower():
 
                 derivative = (FR_der + R_der) / (dt + 10**(-9))
 
-                self.velocity.angular.z = -max(min(Kp*proportional + Ki*integral + Kd*derivative, 0.5), -0.5)
-                print ("Right:", self.sonar_R.range)
-                print ("FR:", self.sonar_FR.range)
-                print ("Front:", self.sonar_F.range)
+                #Set the right velocities for state 2
                 self.velocity.linear.x = 0.4
-
+                self.velocity.angular.z = -max(min(Kp*proportional + Kd*derivative, 0.5), -0.5)
+                
+                #Condition for previous state
                 if ((self.sonar_R.range + 0.3 >= self.sonar_F.range) or (self.sonar_FR.range + 0.25 >= self.sonar_F.range)):
                     state = 1
 
+            #Store the previous errors for next loop
             if (state == 2):    
                 previousFR_error = FR_error
                 previousR_error = R_error
 
 
-            # Publish the new joint's angular positions
+            #Publish the new velocities
             self.velocity_pub.publish(self.velocity)
+
+            #Publish the values needed for the report
+            self.pub1.publish(abs(0.3 - self.sonar_FR.range))
+            self.pub2.publish(abs(0.2 - self.sonar_R.range))
+            self.pub3.publish(self.velocity.linear.x)
 
             self.pub_rate.sleep()
             
